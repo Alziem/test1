@@ -1,0 +1,39 @@
+import ToastHandling from "../../common/toastify";
+import connect from "../../../services/connect";
+import handlingData from '../../common/handlingData'
+import handlingError from '../../common/handlingError'
+
+import {message} from 'antd'
+
+const http = new connect();
+
+const key = 2;
+
+
+export const UploadExcel = (data) => {
+
+    message.loading('Loading ...',key);
+
+    http
+    .postData(data, `${http.BASE_URL_SELLER}/product/excel`, false)
+
+    .then((res) => {
+        return handlingData(res);
+    })
+    .catch((err) => {
+        handlingError(err).forEach((element,index) => {
+
+            if(element.m_neg){
+
+                ToastHandling("error", element.m_neg[0]);
+            }
+
+            if(element.title){
+
+                ToastHandling("error", element.title[0]);
+            }
+        })
+    });
+
+    return true;
+};

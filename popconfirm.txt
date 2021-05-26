@@ -1,0 +1,172 @@
+import React, { Fragment, useState } from "react";
+import { Link } from "react-router-dom";
+import { Popconfirm, Tooltip, Button } from "antd";
+import { useTranslation } from "react-i18next";
+import connect from "../../services/connect";
+import { toast } from "react-toastify";
+/// Icons
+
+import EditIcon from "@material-ui/icons/Edit";
+import RestoreFromTrashIcon from "@material-ui/icons/RestoreFromTrash";
+import VisibilityIcon from "@material-ui/icons/Visibility";
+
+const http = new connect();
+
+const Columns = (table, columns, data) => {
+  const { t } = useTranslation();
+
+  const [visible, setVisible] = useState([]);
+
+  const [loadings, setLoading] = useState([]);
+
+  const [errors, setError] = useState([]);
+
+  const Delete = (target) => {
+    setLoading(() => {
+      const newLoadings = [...loadings];
+
+      newLoadings[target] = true;
+
+      return newLoadings;
+    });
+
+    deleteProduct(target);
+  };
+
+  const handleDeleteRow = (rowIndex, DataIndex) => {
+
+    const rowToDelete = rowIndex.data[0].dataIndex;
+
+    console.log(rowToDelete);
+
+    // var idCatToDelete = data.productCategories.categoryList.categoriesList[rowToDelete][0];
+  };
+
+  const deleteProduct = (index) => {
+    http
+      .deleteData(null, `${http.BASE_URL_SELLER}/product/${index}`, true)
+
+      .then((res) => {
+        if (res.data.status) {
+          setLoading(() => {
+            const newLoadings = [...loadings];
+
+            newLoadings[index] = false;
+
+            return newLoadings;
+          });
+
+          setVisible(() => {
+            const newLoadings = [...visible];
+
+            newLoadings[index] = false;
+
+            return newLoadings;
+          });
+
+          toast.success(res.data.data.message, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+
+          const { row } = data;
+
+          row.shift();
+
+          console.log(data);
+        } else {
+          setError(res.data.errors);
+        }
+      })
+
+      .catch((err) => console.log(err));
+  };
+
+  const enterVisible = (index) => {
+    for (let x in visible) {
+      visible[x] = false;
+    }
+
+    setVisible(() => {
+      const newLoadings = [...visible];
+
+      newLoadings[index] = true;
+
+      return newLoadings;
+    });
+  };
+
+  const handleCancel = (index) => {
+    setVisible(() => {
+      const newLoadings = [...visible];
+
+      newLoadings[index] = false;
+
+      return newLoadings;
+    });
+  };
+  
+  return [
+    ...columns,
+    {
+      label: t("Actions"),
+      name: "id",
+      options: {
+        filter: false,
+        empty: true,
+        onRowsDelete: (rowData, rowState) => {
+
+          handleDeleteRow(rowData, rowState);
+
+        },
+
+        customBodyRender: (dataIndex, rowIndex) => {
+          return (
+            <Fragment>
+              <Tooltip title="View" placement="bottom">
+                <Button>
+                  <Link to={`${table}/${dataIndex}`}>
+                    <VisibilityIcon />
+                  </Link>
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Edit" placement="bottom">
+                <Button>
+                  <Link to={`${table}/${dataIndex}/edit`}>
+                    <EditIcon />
+                  </Link>
+                </Button>
+              </Tooltip>
+{/* 
+              <Tooltip title="Delete" placement="bottom">
+                <Popconfirm
+                  title={t(`${table}.delete`)}
+                  placement="topLeft"
+                  visible={visible[dataIndex]}
+                  onConfirm={() => Delete(dataIndex)}
+                  okButtonProps={{ loading: loadings[dataIndex] }}
+                  onCancel={() => handleCancel(dataIndex)}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button onClick={() => enterVisible(dataIndex)}>
+                    <RestoreFromTrashIcon />
+                  </Button>
+                </Popconfirm>
+              </Tooltip> */}
+
+            </Fragment>
+          );
+        },
+      },
+    },
+  ];
+};
+
+export default Columns;
